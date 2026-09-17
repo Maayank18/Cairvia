@@ -15,7 +15,8 @@ export default defineConfig({
       "@cairvia/config": resolve(root, "packages/config/src/index.ts"),
       "@cairvia/local-store": resolve(root, "packages/local-store/src/index.ts"),
       "@cairvia/action-runtime": resolve(root, "packages/action-runtime/src/index.ts"),
-      "@cairvia/api": resolve(root, "services/api/src/index.ts")
+      "@cairvia/api": resolve(root, "services/api/src/index.ts"),
+      "@cairvia/policy": resolve(root, "packages/policy/src/index.ts")
     }
   }
 });

@@ -3,6 +3,9 @@ import {
   SCHEMA_VERSIONS,
   defaultUserPreferences,
   type ActionPermissionV1,
+  type CommitmentCandidateV1,
+  type ContextItemV1,
+  type ContextSnapshotV1,
   type ExecutionEventV1,
   type RecoveryCapsuleV1,
   type SyncQueueItemV1,
@@ -19,6 +22,9 @@ export class MemoryThreadStore implements ThreadStore {
   sync: SyncQueueItemV1[] = [];
   preferences: UserPreferencesV1 = defaultUserPreferences();
   permissions: ActionPermissionV1[] = defaultPermissions(new Date().toISOString());
+  snapshots: ContextSnapshotV1[] = [];
+  contextItems: ContextItemV1[] = [];
+  commitments: CommitmentCandidateV1[] = [];
 
   async insertThread(thread: WorkThreadV1): Promise<void> {
     this.threads.set(thread.id, thread);
@@ -52,11 +58,8 @@ export class MemoryThreadStore implements ThreadStore {
     this.capsules.push(capsule);
   }
   async getLatestCapsule(threadId: string): Promise<RecoveryCapsuleV1 | null> {
-    return (
-      this.capsules
-        .filter((c) => c.threadId === threadId)
-        .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0] ?? null
-    );
+    const matches = this.capsules.filter((c) => c.threadId === threadId);
+    return matches[matches.length - 1] ?? null;
   }
   async appendEvent(event: ExecutionEventV1): Promise<void> {
     this.events.push(event);
@@ -88,6 +91,39 @@ export class MemoryThreadStore implements ThreadStore {
   }
   async savePermissions(permissions: ActionPermissionV1[]): Promise<void> {
     this.permissions = permissions;
+  }
+  async insertSnapshot(snapshot: ContextSnapshotV1): Promise<void> {
+    this.snapshots.push(snapshot);
+  }
+  async listSnapshots(threadId?: string): Promise<ContextSnapshotV1[]> {
+    return this.snapshots.filter((s) => !threadId || s.threadId === threadId);
+  }
+  async insertContextItem(item: ContextItemV1): Promise<void> {
+    this.contextItems.push(item);
+  }
+  async listContextItems(threadId?: string): Promise<ContextItemV1[]> {
+    return this.contextItems.filter((i) => !threadId || i.threadId === threadId);
+  }
+  async saveCommitment(item: CommitmentCandidateV1): Promise<void> {
+    const index = this.commitments.findIndex((c) => c.id === item.id);
+    if (index >= 0) {
+      this.commitments[index] = item;
+    } else {
+      this.commitments.push(item);
+    }
+  }
+  async getCommitment(id: string): Promise<CommitmentCandidateV1 | null> {
+    return this.commitments.find((c) => c.id === id) ?? null;
+  }
+  async getCommitmentByIdempotency(
+    key: string
+  ): Promise<CommitmentCandidateV1 | null> {
+    return this.commitments.find((c) => c.idempotencyKey === key) ?? null;
+  }
+  async listCommitments(): Promise<CommitmentCandidateV1[]> {
+    return [...this.commitments].sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt)
+    );
   }
 }
 

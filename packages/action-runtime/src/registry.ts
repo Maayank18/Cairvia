@@ -6,7 +6,7 @@ import {
   type ActionRequestV1,
   type ActionResultV1
 } from "@cairvia/schemas";
-import { authorize } from "./policy.js";
+import { authorize, ActionDeniedError } from "./policy.js";
 import {
   CopyInput,
   OpenAppInput,
@@ -129,7 +129,26 @@ export function createActionRegistry(executors: OsExecutors) {
     request: ActionRequestV1,
     permissions: ActionPermissionV1[]
   ): Promise<ActionResultV1> {
-    authorize(permissions, request.toolId);
+    let gate;
+    try {
+      gate = authorize(permissions, request);
+    } catch (error) {
+      if (
+        error instanceof ActionDeniedError &&
+        error.authorizationResult === "ask"
+      ) {
+        return {
+          schemaVersion: SCHEMA_VERSIONS.actionResult,
+          actionId: request.id,
+          status: "AWAITING_APPROVAL",
+          message: error.message,
+          verified: false,
+          at: iso(),
+          authorizationResult: "ask"
+        };
+      }
+      throw error;
+    }
     const tool = registry[request.toolId as keyof typeof registry];
     if (!tool) {
       throw new Error(`Unknown tool: ${request.toolId}`);
@@ -143,7 +162,9 @@ export function createActionRegistry(executors: OsExecutors) {
       status: verified ? "SUCCEEDED" : "FAILED",
       message: result.message,
       verified,
-      at: iso()
+      at: iso(),
+      riskClass: gate.riskClass,
+      authorizationResult: gate.authorizationResult
     };
   }
 

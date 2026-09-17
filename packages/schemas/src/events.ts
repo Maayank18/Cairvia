@@ -7,6 +7,11 @@ export const ExecutionEventV1Schema = z.object({
   type: z.string().min(1),
   threadId: z.string().optional(),
   actionId: z.string().optional(),
+  actor: z.string().optional(),
+  action: z.string().optional(),
+  resource: z.string().optional(),
+  authorizationResult: z.string().optional(),
+  correlationId: z.string().optional(),
   payload: z.record(z.unknown()),
   createdAt: z.string().datetime()
 });

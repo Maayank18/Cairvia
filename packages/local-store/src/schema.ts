@@ -71,3 +71,27 @@ export const schemaMigrations = sqliteTable("schema_migrations", {
   version: text("version").primaryKey(),
   appliedAt: text("applied_at").notNull()
 });
+
+export const contextSnapshots = sqliteTable("context_snapshots", {
+  id: text("id").primaryKey(),
+  threadId: text("thread_id").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  createdAt: text("created_at").notNull()
+});
+
+export const contextItems = sqliteTable("context_items", {
+  id: text("id").primaryKey(),
+  threadId: text("thread_id"),
+  type: text("type").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  createdAt: text("created_at").notNull()
+});
+
+export const commitments = sqliteTable("commitments", {
+  id: text("id").primaryKey(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  status: text("status").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull()
+});

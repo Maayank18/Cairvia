@@ -27,14 +27,14 @@ describe("SQLite persistence", () => {
     const first = await createDb(dbPath);
     const store = new SqliteThreadStore(first.db, first.persist);
     const seeded = await seedIfEmpty(store);
-    expect(seeded.intent).toBe("Fix authentication");
+    expect(seeded.intent).toBe("Launch authentication");
     first.close();
 
     const second = await createDb(dbPath);
     const reloaded = await new SqliteThreadStore(second.db, second.persist).getThread(
       seeded.id
     );
-    expect(reloaded?.nextAction).toBe("Run mailer health check");
+    expect(reloaded?.nextAction).toBe("inspect transporter logs");
     second.close();
   });
 
@@ -47,7 +47,8 @@ describe("SQLite persistence", () => {
     const captured = await service.captureRecovery(thread.id);
     const latest = await store.getLatestCapsule(thread.id);
     expect(latest?.id).toBe(captured.recoveryCapsule?.id);
-    expect(latest?.currentState).toContain("SMTP");
+    expect(latest?.currentState).toContain("OTP");
+    expect(thread.blockers[0]).toContain("SMTP");
     first.close();
   });
 });

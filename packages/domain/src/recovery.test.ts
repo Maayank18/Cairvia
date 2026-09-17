@@ -19,7 +19,8 @@ const thread = (): WorkThreadV1 => ({
   confidence: 0.93,
   recoveryCapsule: null,
   userPreferencesSnapshot: defaultUserPreferences(),
-  nextActionRequest: null
+  nextActionRequest: null,
+  version: 1
 });
 
 describe("recovery capsule creation", () => {

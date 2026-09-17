@@ -1,7 +1,5 @@
 import type { Database } from "sql.js";
 
-export const MIGRATION_VERSION = "0001_init";
-
 const INIT_SQL = `
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version TEXT PRIMARY KEY,
@@ -81,17 +79,61 @@ CREATE INDEX IF NOT EXISTS idx_events_created ON execution_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_sync_status ON sync_queue(status);
 `;
 
+const CONTINUITY_SQL = `
+CREATE TABLE IF NOT EXISTS context_snapshots (
+  id TEXT PRIMARY KEY,
+  thread_id TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS context_items (
+  id TEXT PRIMARY KEY,
+  thread_id TEXT,
+  type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS commitments (
+  id TEXT PRIMARY KEY,
+  idempotency_key TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_thread ON context_snapshots(thread_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_commitments_idemp ON commitments(idempotency_key);
+`;
+
+const MIGRATIONS = [
+  { version: "0001_init", sql: INIT_SQL },
+  { version: "0002_continuity", sql: CONTINUITY_SQL }
+];
+
+export const MIGRATION_VERSION = "0002_continuity";
+
 export function applyMigrations(sqlite: Database): void {
-  sqlite.exec(INIT_SQL);
-  const result = sqlite.exec(
-    `SELECT version FROM schema_migrations WHERE version = '${MIGRATION_VERSION}'`
-  );
-  const found = result[0]?.values?.[0]?.[0];
-  if (found) {
-    return;
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    );
+  `);
+  for (const migration of MIGRATIONS) {
+    const result = sqlite.exec(
+      `SELECT version FROM schema_migrations WHERE version = '${migration.version}'`
+    );
+    const found = result[0]?.values?.[0]?.[0];
+    if (found) {
+      continue;
+    }
+    sqlite.exec(migration.sql);
+    sqlite.run(
+      "INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)",
+      [migration.version, new Date().toISOString()]
+    );
   }
-  sqlite.run(
-    "INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)",
-    [MIGRATION_VERSION, new Date().toISOString()]
-  );
 }

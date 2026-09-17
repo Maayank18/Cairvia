@@ -1,19 +1,23 @@
 :root {
-  --bg: #161410;
-  --bg-elev: #221c16;
-  --ink: #f4efe6;
-  --muted: #b7aa98;
-  --line: #3a3228;
+  --bg: #0b0c10;
+  --bg-elev: #14151c;
+  --bg-soft: #1b1d26;
+  --ink: #f3efe6;
+  --muted: #9d978c;
+  --line: rgba(243, 239, 230, 0.1);
   --accent: #c4a574;
+  --accent-dim: rgba(196, 165, 116, 0.18);
   --ready: #7eb8a2;
-  --working: #6ea8ff;
-  --wait: #e0b15a;
+  --working: #8aa8d6;
+  --wait: #d4b37a;
   --success: #8fce7a;
-  --error: #e07a6a;
-  --offline: #8a8378;
+  --error: #d9897c;
+  --offline: #7d786f;
   --focus: #f0d9b0;
-  --radius: 14px;
-  --font: "Segoe UI", "Iowan Old Style", Georgia, system-ui, sans-serif;
+  --radius: 16px;
+  --font: "Segoe UI", system-ui, sans-serif;
+  --display: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -26,7 +30,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 button,
@@ -38,7 +42,7 @@ select {
 
 :focus-visible {
   outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {

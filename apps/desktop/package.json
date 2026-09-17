@@ -6,6 +6,7 @@
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:orb": "electron-vite build && electron .",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit"
   },

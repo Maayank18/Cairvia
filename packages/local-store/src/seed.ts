@@ -1,7 +1,11 @@
 import { SCHEMA_VERSIONS, type WorkThreadV1, defaultUserPreferences } from "@cairvia/schemas";
-import { ThreadService, type ThreadStore } from "@cairvia/domain";
+import {
+  interpretCommitment,
+  ThreadService,
+  type ThreadStore
+} from "@cairvia/domain";
 
-export const SEED_THREAD_ID_HINT = "Fix authentication";
+export const SEED_THREAD_ID_HINT = "Launch authentication";
 
 export async function seedIfEmpty(store: ThreadStore): Promise<WorkThreadV1> {
   const existing = await store.listThreads();
@@ -14,13 +18,13 @@ export async function seedIfEmpty(store: ThreadStore): Promise<WorkThreadV1> {
   const service = new ThreadService(store);
   const draft = await service.createThread({
     project: "CodeArena",
-    intent: "Fix authentication",
-    desiredOutcome: "OTP registration works end-to-end",
-    currentState: "SMTP transport configured; health route created",
-    nextAction: "Run mailer health check",
-    blockers: ["SMTP connectivity not verified"],
-    decisions: ["Use port 587 / STARTTLS"],
-    evidenceRefs: ["file:authController.ts", "file:mailer.ts"],
+    intent: "Launch authentication",
+    desiredOutcome: "Launch authentication",
+    currentState: "OTP registration — health check attempted",
+    nextAction: "inspect transporter logs",
+    blockers: ["SMTP timeout"],
+    decisions: ["OTP registration is the active task"],
+    evidenceRefs: ["health check attempted"],
     status: "DRAFT",
     confidence: 0.93,
     estimatedEffort: "~2 min",
@@ -28,12 +32,22 @@ export async function seedIfEmpty(store: ThreadStore): Promise<WorkThreadV1> {
       schemaVersion: SCHEMA_VERSIONS.actionRequest,
       toolId: "copy_to_clipboard",
       input: {
-        text: "curl -s http://127.0.0.1:3000/health/mailer"
+        text: "Inspect transporter logs for the SMTP timeout"
       }
     }
   });
-  const paused = await service.resumeThread(draft.id);
-  return service.pauseThread(paused.id);
+  const active = await service.resumeThread(draft.id);
+  const interrupted = await service.pauseThread(active.id);
+  const recovered = await service.captureRecovery(interrupted.id);
+  const candidate = interpretCommitment({
+    selectedText: "Please send the deployment report by Friday.",
+    pageTitle: "Mail",
+    pageUrl: "https://mail.example/deployment-report",
+    threadId: recovered.id
+  });
+  candidate.status = "WAITING_FOR_USER";
+  await store.saveCommitment(candidate);
+  return recovered;
 }
 
 export { SEED_THREAD_ID_HINT as seedIntent };

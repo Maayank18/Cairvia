@@ -1,4 +1,4 @@
-import { LOCAL_API_ORIGIN } from "@cairvia/config";
+import { LOCAL_API_ORIGIN } from "@cairvia/config/constants";
 
 export const API = LOCAL_API_ORIGIN;
 

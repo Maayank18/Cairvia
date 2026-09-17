@@ -16,7 +16,10 @@ export const IpcChannelSchema = z.enum([
   "cairvia:preferences:update",
   "cairvia:permissions:list",
   "cairvia:status:get",
-  "cairvia:events:list"
+  "cairvia:events:list",
+  "cairvia:recovery:card",
+  "cairvia:snapshot:idle",
+  "cairvia:commitments:pending"
 ]);
 export type IpcChannel = z.infer<typeof IpcChannelSchema>;
 

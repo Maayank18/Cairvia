@@ -13,6 +13,9 @@ coverage
 .vite
 .turbo
 *.log
+cdk.out
+.cdk.staging
+infrastructure/cdk/dist
 apps/desktop/out
 apps/control-center/dist
 services/api/dist

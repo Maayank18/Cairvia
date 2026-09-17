@@ -8,6 +8,7 @@ const aliases = {
   "@cairvia/ui/styles.css": resolve(root, "packages/ui/src/styles.css"),
   "@cairvia/schemas": resolve(root, "packages/schemas/src/index.ts"),
   "@cairvia/domain": resolve(root, "packages/domain/src/index.ts"),
+  "@cairvia/config/constants": resolve(root, "packages/config/src/constants.ts"),
   "@cairvia/config": resolve(root, "packages/config/src/index.ts"),
   "@cairvia/local-store": resolve(root, "packages/local-store/src/index.ts"),
   "@cairvia/action-runtime": resolve(root, "packages/action-runtime/src/index.ts"),
@@ -21,12 +22,26 @@ export default defineConfig({
     resolve: { alias: aliases }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
-    resolve: { alias: aliases }
+    plugins: [externalizeDepsPlugin({ exclude: ["@cairvia/schemas"] })],
+    resolve: { alias: aliases },
+    build: {
+      rollupOptions: {
+        output: {
+          format: "cjs",
+          entryFileNames: "[name].cjs",
+          chunkFileNames: "[name].cjs"
+        }
+      }
+    }
   },
   renderer: {
     root: resolve(__dirname, "src/renderer"),
     plugins: [react()],
-    resolve: { alias: aliases }
+    resolve: { alias: aliases },
+    server: {
+      host: "127.0.0.1",
+      port: 5174,
+      strictPort: true
+    }
   }
 });

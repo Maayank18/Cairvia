@@ -14,8 +14,8 @@ describe("offline queue and restart", () => {
 
     const second = await createAppKernel(dbPath);
     const again = await second.threads.getThread(id);
-    expect(again.intent).toBe("Fix authentication");
-    expect(again.nextAction).toContain("mailer");
+    expect(again.intent).toBe("Launch authentication");
+    expect(again.nextAction).toContain("transporter");
     const pending = await second.store.listPendingSync();
     expect(pending.length).toBeGreaterThan(0);
     second.sqlite.close();

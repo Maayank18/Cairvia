@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  width: 320px;
+  font: 14px/1.4 "Segoe UI", system-ui, sans-serif;
+  background: #161410;
+  color: #f4efe6;
+  padding: 12px;
+}
+button {
+  font: inherit;
+  border-radius: 999px;
+  border: 1px solid #3a3228;
+  background: #c4a574;
+  color: #1a140e;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+button.ghost {
+  background: transparent;
+  color: #f4efe6;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.muted {
+  color: #b7aa98;
+}

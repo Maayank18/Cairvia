@@ -9,5 +9,12 @@ export const SCHEMA_VERSIONS = {
   actionPermission: "ActionPermissionV1",
   syncQueueItem: "SyncQueueItemV1",
   threadUpdate: "ThreadUpdateV1",
-  progressNote: "ProgressNoteV1"
+  progressNote: "ProgressNoteV1",
+  contextItem: "ContextItemV1",
+  contextSnapshot: "ContextSnapshotV1",
+  resumeCard: "ResumeCardV1",
+  commitmentCandidate: "CommitmentCandidateV1",
+  proposedAction: "ProposedActionV1",
+  syncEvent: "SyncEventV1",
+  contextPacket: "ContextPacketV1"
 } as const;

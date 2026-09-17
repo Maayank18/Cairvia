@@ -5,17 +5,26 @@
   "description": "Cairvia — keep the thread. Continue the work.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "pnpm": ">=10"
   },
   "packageManager": "pnpm@10.14.0",
   "scripts": {
+    "preinstall": "node scripts/ensure-pnpm.mjs",
+    "dev": "node scripts/dev.mjs",
     "dev:api": "pnpm --filter @cairvia/api dev",
     "dev:desktop": "pnpm --filter @cairvia/desktop dev",
     "dev:control-center": "pnpm --filter @cairvia/control-center dev",
     "build": "pnpm -r --if-present build",
+    "build:extension": "node scripts/build-extension.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "pnpm typecheck",
+    "healthcheck": "pnpm test && pnpm typecheck",
     "seed": "pnpm --filter @cairvia/local-store seed",
+    "seed:cloud": "pnpm --filter @cairvia/cloud-api seed",
+    "synth": "pnpm --filter @cairvia/infrastructure synth",
+    "deploy": "pnpm --filter @cairvia/infrastructure deploy",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {

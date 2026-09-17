@@ -1,5 +1,8 @@
 import type {
   ActionPermissionV1,
+  CommitmentCandidateV1,
+  ContextItemV1,
+  ContextSnapshotV1,
   ExecutionEventV1,
   RecoveryCapsuleV1,
   SyncQueueItemV1,
@@ -24,4 +27,12 @@ export interface ThreadStore {
   savePreferences(prefs: UserPreferencesV1): Promise<void>;
   listPermissions(): Promise<ActionPermissionV1[]>;
   savePermissions(permissions: ActionPermissionV1[]): Promise<void>;
+  insertSnapshot(snapshot: ContextSnapshotV1): Promise<void>;
+  listSnapshots(threadId?: string): Promise<ContextSnapshotV1[]>;
+  insertContextItem(item: ContextItemV1): Promise<void>;
+  listContextItems(threadId?: string): Promise<ContextItemV1[]>;
+  saveCommitment(item: CommitmentCandidateV1): Promise<void>;
+  getCommitment(id: string): Promise<CommitmentCandidateV1 | null>;
+  getCommitmentByIdempotency(key: string): Promise<CommitmentCandidateV1 | null>;
+  listCommitments(): Promise<CommitmentCandidateV1[]>;
 }

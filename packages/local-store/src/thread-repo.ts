@@ -1,6 +1,9 @@
 import { desc, eq } from "drizzle-orm";
 import {
   ActionPermissionV1Schema,
+  CommitmentCandidateV1Schema,
+  ContextItemV1Schema,
+  ContextSnapshotV1Schema,
   ExecutionEventV1Schema,
   RecoveryCapsuleV1Schema,
   SCHEMA_VERSIONS,
@@ -9,6 +12,9 @@ import {
   WorkThreadV1Schema,
   defaultUserPreferences,
   type ActionPermissionV1,
+  type CommitmentCandidateV1,
+  type ContextItemV1,
+  type ContextSnapshotV1,
   type ExecutionEventV1,
   type RecoveryCapsuleV1,
   type SyncQueueItemV1,
@@ -20,6 +26,9 @@ import type { ThreadStore } from "@cairvia/domain";
 import type { CairviaDb } from "./client.js";
 import {
   actionPermissions,
+  commitments,
+  contextItems,
+  contextSnapshots,
   executionEvents,
   recoveryCapsules,
   syncQueue,
@@ -261,5 +270,124 @@ export class SqliteThreadStore implements ThreadStore {
       }
     }
     this.persist();
+  }
+
+  async insertSnapshot(snapshot: ContextSnapshotV1): Promise<void> {
+    const parsed = ContextSnapshotV1Schema.parse(snapshot);
+    this.db.insert(contextSnapshots).values({
+      id: parsed.id,
+      threadId: parsed.threadId,
+      payloadJson: JSON.stringify(parsed),
+      createdAt: parsed.capturedAt
+    }).run();
+    this.persist();
+  }
+
+  async listSnapshots(threadId?: string): Promise<ContextSnapshotV1[]> {
+    const rows = threadId
+      ? this.db
+          .select()
+          .from(contextSnapshots)
+          .where(eq(contextSnapshots.threadId, threadId))
+          .orderBy(desc(contextSnapshots.createdAt))
+          .all()
+      : this.db
+          .select()
+          .from(contextSnapshots)
+          .orderBy(desc(contextSnapshots.createdAt))
+          .all();
+    return rows.map((r) =>
+      ContextSnapshotV1Schema.parse(JSON.parse(r.payloadJson))
+    );
+  }
+
+  async insertContextItem(item: ContextItemV1): Promise<void> {
+    const parsed = ContextItemV1Schema.parse(item);
+    this.db.insert(contextItems).values({
+      id: parsed.id,
+      threadId: parsed.threadId,
+      type: parsed.type,
+      payloadJson: JSON.stringify(parsed),
+      createdAt: parsed.createdAt
+    }).run();
+    this.persist();
+  }
+
+  async listContextItems(threadId?: string): Promise<ContextItemV1[]> {
+    const rows = threadId
+      ? this.db
+          .select()
+          .from(contextItems)
+          .where(eq(contextItems.threadId, threadId))
+          .all()
+      : this.db.select().from(contextItems).all();
+    return rows.map((r) =>
+      ContextItemV1Schema.parse(JSON.parse(r.payloadJson))
+    );
+  }
+
+  async saveCommitment(item: CommitmentCandidateV1): Promise<void> {
+    const parsed = CommitmentCandidateV1Schema.parse(item);
+    const existing = this.db
+      .select()
+      .from(commitments)
+      .where(eq(commitments.id, parsed.id))
+      .get();
+    if (existing) {
+      this.db
+        .update(commitments)
+        .set({
+          payloadJson: JSON.stringify(parsed),
+          status: parsed.status,
+          updatedAt: parsed.updatedAt
+        })
+        .where(eq(commitments.id, parsed.id))
+        .run();
+    } else {
+      this.db.insert(commitments).values({
+        id: parsed.id,
+        idempotencyKey: parsed.idempotencyKey,
+        payloadJson: JSON.stringify(parsed),
+        status: parsed.status,
+        createdAt: parsed.createdAt,
+        updatedAt: parsed.updatedAt
+      }).run();
+    }
+    this.persist();
+  }
+
+  async getCommitment(id: string): Promise<CommitmentCandidateV1 | null> {
+    const row = this.db
+      .select()
+      .from(commitments)
+      .where(eq(commitments.id, id))
+      .get();
+    return row
+      ? CommitmentCandidateV1Schema.parse(JSON.parse(row.payloadJson))
+      : null;
+  }
+
+  async getCommitmentByIdempotency(
+    key: string
+  ): Promise<CommitmentCandidateV1 | null> {
+    const row = this.db
+      .select()
+      .from(commitments)
+      .where(eq(commitments.idempotencyKey, key))
+      .get();
+    return row
+      ? CommitmentCandidateV1Schema.parse(JSON.parse(row.payloadJson))
+      : null;
+  }
+
+  async listCommitments(): Promise<CommitmentCandidateV1[]> {
+    const rows = this.db
+      .select()
+      .from(commitments)
+      .orderBy(desc(commitments.updatedAt))
+      .all();
+    return rows.map((r) =>
+      CommitmentCandidateV1Schema.parse(JSON.parse(r.payloadJson))
+    );
   }
 }

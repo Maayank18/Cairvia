@@ -11,8 +11,10 @@ import {
 } from "@cairvia/schemas";
 import type { ThreadStore } from "./ports.js";
 import { createRecoveryCapsule } from "./recovery.js";
+import { createSnapshot } from "./snapshot.js";
 import { isCapsuleStale } from "./stale.js";
 import { transition } from "./thread-machine.js";
+import { SyncHub, syncTypeFromAudit } from "./sync-hub.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -29,8 +31,26 @@ export class ThreadNotFoundError extends Error {
   }
 }
 
+export class StaleWriteError extends Error {
+  constructor(
+    public readonly currentVersion: number,
+    public readonly expectedVersion: number
+  ) {
+    super(
+      `Work Thread was updated elsewhere (have ${currentVersion}, expected ${expectedVersion})`
+    );
+    this.name = "StaleWriteError";
+  }
+}
+
 export class ThreadService {
-  constructor(private readonly store: ThreadStore) {}
+  constructor(
+    private readonly store: ThreadStore,
+    private readonly options: {
+      hub?: SyncHub;
+      userId?: string;
+    } = {}
+  ) {}
 
   async createThread(
     input: Omit<
@@ -42,6 +62,7 @@ export class ThreadService {
       | "lastValidatedAt"
       | "recoveryCapsule"
       | "userPreferencesSnapshot"
+      | "version"
     > & { userPreferencesSnapshot?: UserPreferencesV1 }
   ): Promise<WorkThreadV1> {
     const ts = nowIso();
@@ -54,9 +75,11 @@ export class ThreadService {
       lastValidatedAt: ts,
       recoveryCapsule: null,
       userPreferencesSnapshot:
-        input.userPreferencesSnapshot ?? defaultUserPreferences()
+        input.userPreferencesSnapshot ?? defaultUserPreferences(),
+      version: 1
     });
     await this.store.insertThread(thread);
+    await this.snapshot(thread, "thread starts", ["thread.created"]);
     await this.audit("thread.created", thread.id, { status: thread.status });
     return thread;
   }
@@ -84,24 +107,45 @@ export class ThreadService {
 
   async updateThread(id: string, patch: ThreadUpdateV1): Promise<WorkThreadV1> {
     const parsed = ThreadUpdateV1Schema.parse(patch);
+    const { expectedVersion, ...fields } = parsed;
     const current = await this.getThread(id);
+    if (
+      expectedVersion !== undefined &&
+      (current.version ?? 1) !== expectedVersion
+    ) {
+      throw new StaleWriteError(current.version ?? 1, expectedVersion);
+    }
     const ts = nowIso();
     const next = WorkThreadV1Schema.parse({
       ...current,
-      ...parsed,
+      ...fields,
       schemaVersion: SCHEMA_VERSIONS.workThread,
       id: current.id,
       status: current.status,
       updatedAt: ts,
-      lastValidatedAt: ts
+      lastValidatedAt: ts,
+      version: (current.version ?? 1) + 1
     });
     await this.store.updateThread(next);
+    await this.snapshot(next, "user changed task", ["thread.updated"]);
     await this.audit("thread.updated", id, {});
     return this.withCapsule(next);
   }
 
   async pauseThread(id: string): Promise<WorkThreadV1> {
     return this.setStatus(id, "PAUSED", "thread.paused");
+  }
+
+  async interruptThread(id: string): Promise<WorkThreadV1> {
+    return this.setStatus(id, "INTERRUPTED", "thread.interrupted");
+  }
+
+  async blockThread(id: string): Promise<WorkThreadV1> {
+    return this.setStatus(id, "BLOCKED", "thread.blocked");
+  }
+
+  async archiveThread(id: string): Promise<WorkThreadV1> {
+    return this.setStatus(id, "ARCHIVED", "thread.archived");
   }
 
   async resumeThread(id: string): Promise<WorkThreadV1> {
@@ -113,9 +157,11 @@ export class ThreadService {
       updatedAt: ts,
       lastValidatedAt: ts,
       lastActiveAt: ts,
-      interruptionReason: undefined
+      interruptionReason: undefined,
+      version: (current.version ?? 1) + 1
     });
     await this.store.updateThread(next);
+    await this.snapshot(next, "task resumed", ["thread.resumed"]);
     await this.audit("thread.resumed", id, {});
     return this.withCapsule(next);
   }
@@ -136,9 +182,11 @@ export class ThreadService {
       evidenceRefs: evidence,
       updatedAt: ts,
       lastValidatedAt: ts,
-      lastActiveAt: ts
+      lastActiveAt: ts,
+      version: (current.version ?? 1) + 1
     });
     await this.store.updateThread(next);
+    await this.snapshot(next, "progress marked", ["thread.progress"]);
     await this.audit("thread.progress", id, { note: note.note, done: note.done });
     return this.withCapsule(next);
   }
@@ -159,9 +207,11 @@ export class ThreadService {
       status,
       recoveryCapsule: capsule,
       updatedAt: ts,
-      interruptionReason: current.interruptionReason ?? "user_capture"
+      interruptionReason: current.interruptionReason ?? "user_capture",
+      version: (current.version ?? 1) + 1
     });
     await this.store.updateThread(next);
+    await this.snapshot(next, "user marks interruption", ["recovery.captured"]);
     await this.audit("recovery.captured", id, { capsuleId: capsule.id });
     return this.withCapsule(next);
   }
@@ -185,9 +235,15 @@ export class ThreadService {
       ...current,
       status: transition(current.status, to),
       updatedAt: ts,
-      lastValidatedAt: ts
+      lastValidatedAt: ts,
+      version: (current.version ?? 1) + 1
     });
     await this.store.updateThread(next);
+    await this.snapshot(
+      next,
+      to === "PAUSED" ? "task pauses" : `status:${to}`,
+      [event]
+    );
     await this.audit(event, id, { from: current.status, to });
     return this.withCapsule(next);
   }
@@ -195,6 +251,15 @@ export class ThreadService {
   private async withCapsule(thread: WorkThreadV1): Promise<WorkThreadV1> {
     const capsule = await this.store.getLatestCapsule(thread.id);
     return { ...thread, recoveryCapsule: capsule };
+  }
+
+  private async snapshot(
+    thread: WorkThreadV1,
+    reason: string,
+    sourceEvents: string[]
+  ): Promise<void> {
+    const snap = createSnapshot(thread, reason, sourceEvents);
+    await this.store.insertSnapshot(snap);
   }
 
   private async audit(
@@ -208,6 +273,10 @@ export class ThreadService {
       id: newId("evt"),
       type,
       threadId,
+      actor: "user",
+      action: type,
+      resource: threadId,
+      correlationId: newId("corr"),
       payload,
       createdAt: ts
     });
@@ -220,6 +289,14 @@ export class ThreadService {
       attempts: 0,
       createdAt: ts,
       updatedAt: ts
+    });
+    this.options.hub?.publish({
+      type: syncTypeFromAudit(type),
+      userId: this.options.userId ?? "local",
+      threadId,
+      source: "BACKEND",
+      version: 0,
+      payload: { type, ...payload }
     });
   }
 }

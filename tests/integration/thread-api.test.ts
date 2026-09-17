@@ -27,7 +27,7 @@ describe("Thread lifecycle over local API", () => {
     const active = await app.request("/threads/active");
     expect(active.status).toBe(200);
     const { thread } = (await active.json()) as { thread: { id: string; intent: string } };
-    expect(thread.intent).toBe("Fix authentication");
+    expect(thread.intent).toBe("Launch authentication");
 
     const resumed = await app.request(`/threads/${thread.id}/resume`, { method: "POST" });
     expect(resumed.status).toBe(200);
@@ -63,7 +63,7 @@ describe("Thread lifecycle over local API", () => {
     const body = (await captured.json()) as {
       thread: { recoveryCapsule: { nextAction: string } | null };
     };
-    expect(body.thread.recoveryCapsule?.nextAction).toBe("Run mailer health check");
+    expect(body.thread.recoveryCapsule?.nextAction).toBe("inspect transporter logs");
 
     const pending = await kernel.store.listPendingSync();
     expect(pending.length).toBeGreaterThan(0);

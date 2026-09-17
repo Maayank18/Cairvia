@@ -1,6 +1,9 @@
 {
   "name": "cairvia-extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Phase 1 placeholder. Context collection arrives after the Work Thread loop is proven."
+  "description": "Cairvia Companion — explicit selected-text capture for Chrome and Edge.",
+  "scripts": {
+    "build": "node ../../scripts/build-extension.mjs"
+  }
 }

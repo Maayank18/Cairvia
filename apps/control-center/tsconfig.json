@@ -2,7 +2,16 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@cairvia/domain/interaction-mode": [
+        "../../packages/domain/src/interaction-mode.ts"
+      ],
+      "@cairvia/config/constants": [
+        "../../packages/config/src/constants.ts"
+      ]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

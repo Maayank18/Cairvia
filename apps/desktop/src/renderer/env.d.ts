@@ -3,6 +3,9 @@ export {};
 type CairviaBridge = {
   invoke: (channel: string, payload?: unknown) => Promise<unknown>;
   expand: (next: boolean) => void;
+  dragStart: () => void;
+  dragMove: () => void;
+  dragEnd: () => void;
   openControlCenter: () => void;
   quit: () => void;
   onLayout: (listener: (expanded: boolean) => void) => () => void;

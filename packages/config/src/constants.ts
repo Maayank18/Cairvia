@@ -1,0 +1,14 @@
+export const APP_NAME = "Cairvia";
+export const ORB_NAME = "Cairvia Orb";
+export const CONTROL_CENTER_NAME = "Cairvia Control Center";
+export const EVENT_SOURCE_BROWSER = "cairvia.browser";
+export const LOCAL_API_HOST = "127.0.0.1";
+export const LOCAL_API_PORT = 47821;
+export const LOCAL_API_ORIGIN = `http://${LOCAL_API_HOST}:${LOCAL_API_PORT}`;
+export const CONTROL_CENTER_ORIGIN = "http://127.0.0.1:5173";
+export const GLOBAL_SHORTCUT = "CommandOrControl+Shift+Space";
+export const GLOBAL_SHORTCUT_FALLBACK = "CommandOrControl+Alt+O";
+export const DB_FILENAME = "cairvia.sqlite";
+export const COMMITMENT_CONFIDENCE_THRESHOLD = 0.7;
+export const IDLE_SNAPSHOT_MS = 2 * 60 * 1000;
+export const AGENT_TIMEOUT_MS = 2500;

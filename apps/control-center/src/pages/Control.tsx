@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ActionPermissionV1, UserPreferencesV1 } from "@cairvia/schemas";
+import { applyInteractionMode } from "@cairvia/domain/interaction-mode";
 import { api } from "../api";
 
 export function ControlPage() {
@@ -26,6 +27,9 @@ export function ControlPage() {
   function toggle(
     path: (p: UserPreferencesV1) => void
   ): void {
+    if (!current) {
+      return;
+    }
     const next = structuredClone(current);
     path(next);
     save.mutate(next);
@@ -35,6 +39,24 @@ export function ControlPage() {
     <div className="timeline">
       <article className="card">
         <h2>Working preferences</h2>
+        <fieldset className="pref">
+          <legend>Interaction mode</legend>
+          {(["CALM", "GUIDED", "DETAILED"] as const).map((mode) => (
+            <label key={mode} className="pref">
+              <input
+                type="radio"
+                name="interaction-mode"
+                checked={(current.interactionMode ?? "GUIDED") === mode}
+                onChange={() => save.mutate(applyInteractionMode(current, mode))}
+              />
+              {mode === "CALM"
+                ? "Calm — one step, concise"
+                : mode === "DETAILED"
+                  ? "Detailed — show effort and ambiguity"
+                  : "Guided — default"}
+            </label>
+          ))}
+        </fieldset>
         <label className="pref">
           <input
             type="checkbox"

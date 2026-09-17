@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Banner, Button } from "@cairvia/ui";
-import type { WorkThreadV1 } from "@cairvia/schemas";
+import { Banner, Button, EvidenceBadge } from "@cairvia/ui";
+import type { ResumeCardV1, WorkThreadV1 } from "@cairvia/schemas";
 import { SCHEMA_VERSIONS } from "@cairvia/schemas";
 import { api } from "../api";
 
@@ -10,14 +10,9 @@ export function NowPage() {
     queryKey: ["active-thread"],
     queryFn: () => api<{ thread: WorkThreadV1 | null }>("/threads/active")
   });
-  const recoveryQuery = useQuery({
-    queryKey: ["recovery", threadQuery.data?.thread?.id],
-    enabled: Boolean(threadQuery.data?.thread?.id),
-    queryFn: () =>
-      api<{
-        capsule: WorkThreadV1["recoveryCapsule"];
-        stale: boolean;
-      }>(`/threads/${threadQuery.data!.thread!.id}/recovery`)
+  const cardQuery = useQuery({
+    queryKey: ["resume-card"],
+    queryFn: () => api<{ card: ResumeCardV1 }>("/recovery/card")
   });
 
   const resume = useMutation({
@@ -32,24 +27,12 @@ export function NowPage() {
         })
       });
       const request = thread.nextActionRequest;
-      if (!request) {
-        return;
-      }
-      if (request.toolId === "copy_to_clipboard") {
+      if (request?.toolId === "copy_to_clipboard") {
         const text = String(request.input.text ?? "");
         if (text && navigator.clipboard) {
           await navigator.clipboard.writeText(text);
         }
-        return;
       }
-      await api("/actions", {
-        method: "POST",
-        body: JSON.stringify({
-          toolId: request.toolId,
-          input: request.input,
-          threadId: thread.id
-        })
-      });
     },
     onSettled: () => client.invalidateQueries()
   });
@@ -72,7 +55,7 @@ export function NowPage() {
       try {
         await api(`/threads/${id}/pause`, { method: "POST" });
       } catch {
-        // already paused
+        /* already paused */
       }
       await api(`/threads/${id}/recovery`, { method: "POST" });
     },
@@ -80,39 +63,60 @@ export function NowPage() {
   });
 
   const thread = threadQuery.data?.thread;
-  if (threadQuery.isLoading) {
+  const card = cardQuery.data?.card;
+  if ((threadQuery.isLoading || cardQuery.isLoading) && (!thread || !card)) {
     return <p>Loading current Work Thread…</p>;
   }
-  if (!thread) {
-    return <p>No active Work Thread. Seed the local database first.</p>;
+  if ((threadQuery.isError || cardQuery.isError) && thread) {
+    return (
+      <article className="card">
+        <Banner>You're offline. Your last saved context is available.</Banner>
+        <h2>{thread.intent}</h2>
+        <p>{thread.nextAction}</p>
+      </article>
+    );
   }
+  if (!thread || !card || !card.threadId) {
+    return (
+      <article className="card">
+        <p className="eyebrow">NOW</p>
+        <h2>No active thread</h2>
+        <p>Start something worth continuing. Cairvia will keep the state you need to return.</p>
+      </article>
+    );
+  }
+
+  const welcome = ["PAUSED", "INTERRUPTED", "RECOVERABLE", "BLOCKED"].includes(
+    thread.status
+  );
 
   return (
     <article className="card">
-      <p>NOW</p>
-      <h2>
-        {thread.project ?? "Work Thread"} — {thread.intent}
-      </h2>
-      <p>{thread.desiredOutcome}</p>
+      <p>{welcome ? "WELCOME BACK" : "NOW"}</p>
+      <EvidenceBadge label={card.evidenceLabel} />
+      <h2>{card.whatIWasDoing}</h2>
       <p>
-        <strong>Current state:</strong> {thread.currentState}
+        <strong>You stopped at:</strong> {card.whereIStopped}
       </p>
       <p>
-        <strong>Blocker:</strong> {thread.blockers[0] ?? "None"}
+        <strong>Blocker:</strong> {card.blocker ?? "None stored"}
       </p>
       <p>
-        <strong>Next action:</strong> {thread.nextAction}
+        <strong>Next:</strong> {card.nextAction}
         {thread.estimatedEffort ? ` · ${thread.estimatedEffort}` : ""}
       </p>
-      {thread.recoveryCapsule ? (
+      {card.lowConfidence ? (
         <Banner>
-          {recoveryQuery.data?.stale
-            ? `Recovery capsule may be stale (captured ${thread.recoveryCapsule.capturedAt}).`
-            : `Resume state saved ${thread.recoveryCapsule.capturedAt}.`}
+          {card.lowConfidenceReason ?? "Low confidence — nothing was invented."}
         </Banner>
+      ) : card.stale ? (
+        <Banner>Recovery state may be stale.</Banner>
       ) : (
-        <Banner>No recovery capsule yet. Capture from the Orb or Stop work.</Banner>
+        <Banner>Resume state is evidence-based.</Banner>
       )}
+      {card.alsoInterrupted[0] ? (
+        <p>Also interrupted: {card.alsoInterrupted[0].intent}</p>
+      ) : null}
       <div className="row">
         <Button onClick={() => resume.mutate(thread)}>Resume</Button>
         <Button variant="secondary" onClick={() => progress.mutate(thread.id)}>

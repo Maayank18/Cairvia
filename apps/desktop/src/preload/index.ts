@@ -11,7 +11,16 @@ contextBridge.exposeInMainWorld("cairvia", {
     return ipcRenderer.invoke("cairvia:invoke", channel, payload);
   },
   expand(next: boolean) {
-    ipcRenderer.send("cairvia:orb:expand", next);
+    ipcRenderer.send("cairvia:orb:expand", next === true);
+  },
+  dragStart() {
+    ipcRenderer.send("cairvia:orb:drag-start");
+  },
+  dragMove() {
+    ipcRenderer.send("cairvia:orb:drag-move");
+  },
+  dragEnd() {
+    ipcRenderer.send("cairvia:orb:drag-end");
   },
   openControlCenter() {
     ipcRenderer.send("cairvia:orb:open-control-center");

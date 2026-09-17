@@ -5,7 +5,14 @@ import App from "./App";
 import "@cairvia/ui/styles.css";
 import "./app.css";
 
-const client = new QueryClient();
+const client = new QueryClient({
+  defaultOptions: {
+    queries: {
+      placeholderData: (previous: unknown) => previous,
+      retry: 1
+    }
+  }
+});
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

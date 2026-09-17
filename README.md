@@ -1,18 +1,57 @@
 # Cairvia
 
-Keep the thread. Continue the work.
+**The continuity layer for human work.**  
+**Keep the thread. Continue the work.**
 
-Cairvia is a local-first Work Thread system. Phase 1 is the product kernel: Electron Orb, Control Center, SQLite persistence, recovery capsules, and safe local actions. There is no agent intelligence yet.
+Cairvia is a persistent, user-controlled Work Thread system. It remembers the smallest useful state required to continue after interruption: intent, current state, blocker, last decision, and **one next action**.
 
-Read `01_PROJECT_SPEC_CAIRVIA.md` before changing behavior.
+It is not a chatbot, task manager, calendar, note app, therapist, or autonomous computer agent.
 
-## Requirements
+Surfaces:
+
+- **Cairvia Orb** (Electron) — act
+- **Cairvia Control Center** (web) — understand and control
+- **Cairvia Companion** (Chrome MV3) — explicit selected text only
+
+## Architecture
+
+```text
+Cairvia Orb / Extension / Control Center
+        ↓
+Cognito (deployed) or local SQLite
+        ↓
+API Gateway → Lambda   |   local Hono :47821
+        ↓
+DynamoDB Work Thread (canonical in AWS)
+S3 optional artifacts (never desktop captures)
+EventBridge cairvia.browser → Step Functions (commitment workflow)
+Strands + Bedrock (bounded tools)
+Agent Lambda = AgentCore Runtime HTTP contract
+Cedar policy (READ_CONTEXT / CREATE_TASK / WRITE_LOCAL / SEND_EXTERNAL_MESSAGE / DELETE_DATA)
+```
+
+DynamoDB owns Work Thread state. Agent memory is not the source of truth. AgentCore Gateway is not simulated.
+
+## Prerequisites
 
 - Node.js 22+
-- pnpm 10+
+- pnpm 10+ (`packageManager` in `package.json`)
 - Windows, macOS, or Linux
+- For AWS: AWS CLI, a non-root IAM profile, CDK v2 (via the repo)
 
-## Fresh install
+This repo uses **pnpm**, not npm, for install. `workspace:*` is a pnpm protocol. Running `npm i` will fail.
+
+```bash
+corepack enable
+pnpm --version
+pnpm install
+```
+
+`npm run dev` is allowed only after `pnpm install`. Never use `npm i`.
+
+Guides: `docs/CAIRVIA_ARCHITECTURE.md`, `docs/CAIRVIA_THREE_SURFACE_SYNC.md`, `docs/CAIRVIA_ORB_SETUP.md`, `docs/CAIRVIA_EXTENSION_SETUP.md`, `docs/CAIRVIA_WEBSITE_SETUP.md`, `docs/CAIRVIA_AWS_SETUP.md`, `docs/CAIRVIA_LOCAL_DEVELOPMENT.md`, `docs/CAIRVIA_TESTING.md`, `docs/CAIRVIA_SECURITY.md`, `docs/CAIRVIA_TROUBLESHOOTING.md`, `docs/CAIRVIA_DEMO_FLOW.md`.
+
+## Local setup
 
 ```bash
 pnpm install
@@ -20,87 +59,131 @@ pnpm test
 pnpm seed
 ```
 
-Local data lives at `%USERPROFILE%\.cairvia\cairvia.sqlite` (or `~/.cairvia` on macOS/Linux). Persistence is SQLite via Drizzle, using the SQL.js engine so Phase 1 does not require native compiler toolchains.
+Local data: `%USERPROFILE%\.cairvia\cairvia.sqlite` or `~/.cairvia/cairvia.sqlite`.
 
-## Run Phase 1
+If a previous seed already exists, delete that SQLite file before `pnpm seed` to load the CodeArena demo thread.
 
-Terminal 1 — local API (needed for Control Center; also started by the Orb):
+### Run
 
-```bash
-pnpm dev:api
-```
-
-Terminal 2 — Control Center:
+After `pnpm install`, one command starts the local API, Control Center, and Orb:
 
 ```bash
-pnpm dev:control-center
+npm run dev
+# same as: pnpm dev
 ```
 
-Open http://127.0.0.1:5173
+That also writes the Chrome/Edge unpacked extension to `dist/extension`.
 
-Terminal 3 — Orb:
+| Surface | How to use it |
+| --- | --- |
+| Website | http://127.0.0.1:5173 |
+| API | http://127.0.0.1:47821 |
+| Orb | appears bottom-right; **Ctrl+Shift+Space** (Cmd on macOS) shows or hides it |
+| Extension | Chrome `chrome://extensions` or Edge `edge://extensions` → Developer mode → Load unpacked → **`dist/extension`** |
+
+Keep the terminal open. Ctrl+C stops API, website, and Orb together.
+
+Individual processes if you need them separately:
 
 ```bash
-pnpm dev:desktop
+pnpm dev:api              # http://127.0.0.1:47821
+pnpm dev:control-center   # http://127.0.0.1:5173
+pnpm dev:desktop          # Cairvia Orb (starts its own API if :47821 is free)
+pnpm build:extension      # refresh dist/extension
 ```
 
-If `pnpm dev:desktop` fails because Electron's install script was skipped, run:
+`pnpm lint` runs `pnpm typecheck` (there is no ESLint config). `pnpm build` builds packages that define a build script. `pnpm test` is the full Vitest suite.
+
+If Electron skipped its install script:
 
 ```bash
 node node_modules/electron/install.js
-pnpm dev:desktop
 ```
 
-## How to use the vertical slice
+## Demo seed
 
-Seeded thread: **Fix authentication** / OTP registration / next action **Run mailer health check**.
+Project **CodeArena**. Goal **Launch authentication**. Active task **OTP registration**. Blocker **SMTP timeout**. Next **inspect transporter logs**. One interruption capsule. One candidate: send the deployment report by Friday.
 
-Orb
+## Three-minute story
 
-- Left click: compact panel
-- Right click: action menu
-- Global shortcut: `Ctrl+Shift+Space` (or `Cmd+Shift+Space`) toggles the Orb
+Interruptions force people to reconstruct context. Cairvia stores a Work Thread. Ask what to do next — one action. Work. Interrupt. Return. **Where was I?** Resume actually runs the stored LOW action. Confirm a meeting-style commitment. AWS holds identity, durable state, and the approval workflow.
 
-From the panel: Resume (starts focus + copies the health-check command), Mark progress, Stop (pauses and captures a recovery capsule), Capture.
+Closing: **Cairvia keeps the thread until you can continue.**
 
-Control Center screens: NOW, THREAD, AUTOMATIONS (empty), CONTROL (permissions and working preferences).
+## AWS setup
 
-## Offline
+Use a sandbox account. Never use root keys. Never put credentials in React, the Orb renderer, or the extension.
 
-Disconnect the network. The Orb still opens from SQLite and shows:
+```bash
+aws configure --profile cairvia-hackathon
+aws sts get-caller-identity --profile cairvia-hackathon
+```
 
-`Offline — using local Work Thread.`
+```bash
+export AWS_PROFILE=cairvia-hackathon
+pnpm --filter @cairvia/infrastructure bootstrap
+pnpm synth
+pnpm --filter @cairvia/infrastructure exec -- cdk diff
+pnpm deploy -- -c demoPassword='set-via-cli-not-git'
+```
 
-Close Electron and reopen it. The same Work Thread is still there. Mutations are written to a local `sync_queue` for later cloud reconcile.
+Set the demo user password with `aws cognito-idp admin-set-user-password` (do not commit it).
+
+```bash
+TABLE_NAME=<TableName> DEMO_USER_ID=<cognito-sub> pnpm seed:cloud
+```
+
+Environment variables (never commit secrets):
+
+```text
+AWS_PROFILE / AWS_REGION
+TABLE_NAME
+DEMO_USER_ID
+BEDROCK_MODEL_ID
+EVENT_BUS_NAME          # set by Lambda env
+CAIRVIA_WEB_ORIGIN
+CAIRVIA_DETERMINISTIC_AGENT=1   # skip Bedrock in tests
+```
+
+Bedrock: enable the model in the account/region before a live agent invocation. Model access is not implied by having an AWS account.
+
+AgentCore: this repo deploys a Lambda that implements `/v1/agent/ping` and `/v1/agent/invocations`. Do not invent a Gateway integration for slides. If you later use `npx @aws/agentcore`, compile TypeScript first (`esbuild` via CDK NodejsFunction already bundles the agent Lambda).
+
+### Cleanup
+
+```bash
+pnpm --filter @cairvia/infrastructure exec -- cdk destroy
+```
+
+## Failure copy
+
+- Offline: `You're offline. Your last saved context is available.`
+- Tool: `The action did not complete. Nothing was marked as done.`
+- Model: `Cairvia couldn't complete the reasoning step. Your Work Thread is safe.`
+- Stale: `This recovery state may be outdated.`
+
+## Adjacent products (do not claim first-ever)
+
+| Category | Typical product | Overlap | Cairvia difference |
+| --- | --- | --- | --- |
+| Chat assistants | ChatGPT / Copilot | Language | Continuation state, not conversation |
+| Task managers | Linear / Todoist | Work items | One next action + recovery capsule |
+| Desktop agents | Computer-use agents | Execution | Allowlisted LOW tools, human approval |
+| Note / memory apps | Mem / rewind tools | Recall | Evidence-based resume, not a transcript dump |
+
+If differentiation is weak, sharpen the Orb recovery loop. Do not add features.
 
 ## Security
 
-- `contextIsolation: true`, `nodeIntegration: false`, sandboxed renderer
-- Allowlisted IPC channels only
-- No renderer filesystem or shell access
-- Actions go UI → preload → action runtime → policy → execute → audit
-- Phase 1 executes LOW tools only: `open_url`, `open_file`, `open_app`, `copy_to_clipboard`, `start_focus`
+- `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`
+- Allowlisted IPC only
+- No renderer shell
+- Cedar + action registry: HIGH tools cannot execute
+- No AWS keys in the repository
 
-## Tests
+## Troubleshooting
 
-```bash
-pnpm test
-```
-
-Covers domain transitions, Zod schemas, recovery capsules, permission evaluation, stale detection, SQLite read/write, thread lifecycle, offline queue, and IPC allowlisting.
-
-## Phase 1 exit gate
-
-- [x] Electron Orb
-- [x] Control Center (four screens)
-- [x] WorkThread as the primary domain model
-- [x] SQLite + Drizzle schema with migrations
-- [x] Recovery capsule capture (immutable)
-- [x] Safe local actions
-- [x] Keyboard accessible UI / visible focus / reduced-motion CSS
-- [x] Offline local thread
-- [x] Secured IPC
-- [x] Unit and integration tests
-- [x] Fresh install documented here
-
-Do not start Phase 2 until this loop is reliable.
+- Control Center empty on NOW: start `pnpm dev:api`. Recovery card is `/recovery/card`.
+- Seed unchanged: SQLite already has a thread; delete `.cairvia/cairvia.sqlite`.
+- Electron missing: `node node_modules/electron/install.js`
+- Port 47821 in use: stop the previous API process.

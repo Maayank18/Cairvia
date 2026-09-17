@@ -16,7 +16,7 @@ Cairvia is not a to-do list, chatbot, task decomposer, calendar optimizer, surve
 
 - **Orb (Electron):** execution surface. Low distraction.
 - **Control Center (web):** understanding and control. Not a giant dashboard.
-- **Chrome extension:** permitted context only (not Phase 1).
+- **Chrome extension:** explicit selection only (Cairvia Companion).
 
 Rule: Orb for action. Control Center for understanding and control.
 
@@ -60,6 +60,8 @@ MEDIUM/HIGH permission schema exists but execution is not activated.
 
 Show what is shared. Do not continuously upload a screen. Phase 1 context is the Work Thread and explicit user actions only.
 
-## Out of scope for Phase 1
+## Out of scope for the original Phase 1 kernel
 
-Agents, Bedrock, wake-word, Chrome capture, analytics charts, arbitrary shell, automations that run, cloud sync beyond a local queue.
+Wake-word, analytics charts, arbitrary shell, facial emotion recognition.
+
+Phase 2–3 add recovery intelligence, one Commitment Capture automation, and an optional AWS track (Cognito, API Gateway, Lambda, DynamoDB, EventBridge, Step Functions, Bedrock/Strands). DynamoDB is canonical application state when deployed. AgentCore Gateway is not faked.

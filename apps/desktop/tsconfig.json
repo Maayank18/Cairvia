@@ -3,7 +3,12 @@
   "compilerOptions": {
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@cairvia/config/constants": [
+        "../../packages/config/src/constants.ts"
+      ]
+    }
   },
   "include": ["src", "electron.vite.config.ts"]
 }

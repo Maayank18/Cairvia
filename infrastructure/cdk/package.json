@@ -2,5 +2,25 @@
   "name": "@cairvia/infrastructure",
   "version": "0.1.0",
   "private": true,
-  "description": "AWS CDK arrives in a later phase. Phase 1 is local-first."
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --require-approval never",
+    "bootstrap": "cdk bootstrap",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "aws-cdk": "^2.177.0",
+    "esbuild": "^0.24.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.177.0",
+    "constructs": "^10.4.2",
+    "source-map-support": "^0.5.21"
+  }
 }

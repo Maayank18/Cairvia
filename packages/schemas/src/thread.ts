@@ -34,7 +34,8 @@ export const UserPreferencesV1Schema = z.object({
   control: z.object({
     askBeforeConsequentialActions: z.boolean()
   }),
-  reducedMotion: z.boolean()
+  reducedMotion: z.boolean(),
+  interactionMode: z.enum(["CALM", "GUIDED", "DETAILED"]).default("GUIDED")
 });
 export type UserPreferencesV1 = z.infer<typeof UserPreferencesV1Schema>;
 
@@ -59,7 +60,8 @@ export const defaultUserPreferences = (): UserPreferencesV1 => ({
   control: {
     askBeforeConsequentialActions: true
   },
-  reducedMotion: false
+  reducedMotion: false,
+  interactionMode: "GUIDED"
 });
 
 export const RecoveryCapsuleV1Schema = z.object({
@@ -112,7 +114,8 @@ export const WorkThreadV1Schema = z.object({
   estimatedEffort: z.string().optional(),
   lastActiveAt: z.string().datetime().optional(),
   interruptionReason: z.string().optional(),
-  nextActionRequest: NextActionRequestV1Schema.nullable()
+  nextActionRequest: NextActionRequestV1Schema.nullable(),
+  version: z.number().int().positive().default(1)
 });
 export type WorkThreadV1 = z.infer<typeof WorkThreadV1Schema>;
 
@@ -127,7 +130,8 @@ export const ThreadUpdateV1Schema = z.object({
   evidenceRefs: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(1).optional(),
   estimatedEffort: z.string().optional(),
-  nextActionRequest: NextActionRequestV1Schema.nullable().optional()
+  nextActionRequest: NextActionRequestV1Schema.nullable().optional(),
+  expectedVersion: z.number().int().positive().optional()
 });
 export type ThreadUpdateV1 = z.infer<typeof ThreadUpdateV1Schema>;
 
