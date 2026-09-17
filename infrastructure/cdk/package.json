@@ -1,0 +1,6 @@
+{
+  "name": "@cairvia/infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AWS CDK arrives in a later phase. Phase 1 is local-first."
+}

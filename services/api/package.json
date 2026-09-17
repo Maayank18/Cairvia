@@ -1,0 +1,28 @@
+{
+  "name": "@cairvia/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cairvia/action-runtime": "workspace:*",
+    "@cairvia/config": "workspace:*",
+    "@cairvia/domain": "workspace:*",
+    "@cairvia/local-store": "workspace:*",
+    "@cairvia/schemas": "workspace:*",
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

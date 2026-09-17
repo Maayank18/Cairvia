@@ -1,0 +1,85 @@
+html,
+body,
+#root {
+  background: transparent;
+  overflow: hidden;
+  height: 100%;
+}
+
+.orb-shell {
+  height: 100%;
+  padding: 8px;
+}
+
+.orb-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--orb-color) 70%, white);
+  background: radial-gradient(circle at 30% 30%, #3a3228, #161410 70%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 0 18px var(--orb-color);
+  cursor: pointer;
+  color: var(--ink);
+  -webkit-app-region: no-drag;
+}
+
+.panel {
+  height: calc(100% - 8px);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+}
+
+.menu {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.menu button {
+  text-align: left;
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+  background: var(--bg);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.next {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+}

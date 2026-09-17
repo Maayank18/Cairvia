@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "WorkThreadV1",
+  "intent": "Fix authentication",
+  "desiredOutcome": "OTP registration works end-to-end",
+  "currentState": "SMTP transport configured",
+  "nextAction": "Run mailer health check",
+  "blockers": ["SMTP connectivity not verified"],
+  "decisions": ["Use port 587 / STARTTLS"]
+}

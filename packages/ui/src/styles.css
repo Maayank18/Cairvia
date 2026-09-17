@@ -1,0 +1,63 @@
+:root {
+  --bg: #161410;
+  --bg-elev: #221c16;
+  --ink: #f4efe6;
+  --muted: #b7aa98;
+  --line: #3a3228;
+  --accent: #c4a574;
+  --ready: #7eb8a2;
+  --working: #6ea8ff;
+  --wait: #e0b15a;
+  --success: #8fce7a;
+  --error: #e07a6a;
+  --offline: #8a8378;
+  --focus: #f0d9b0;
+  --radius: 14px;
+  --font: "Segoe UI", "Iowan Old Style", Georgia, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  line-height: 1.45;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

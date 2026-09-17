@@ -1,0 +1,26 @@
+{
+  "name": "cairvia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cairvia — keep the thread. Continue the work.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @cairvia/api dev",
+    "dev:desktop": "pnpm --filter @cairvia/desktop dev",
+    "dev:control-center": "pnpm --filter @cairvia/control-center dev",
+    "build": "pnpm -r --if-present build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "pnpm --filter @cairvia/local-store seed",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
