@@ -41,5 +41,20 @@ describe("ThreadService lifecycle", () => {
       (await service.resumeThread(created.id)).id
     );
     expect(done.status).toBe("COMPLETED");
+
+    const stillActive = await service.createThread({
+      intent: "Keep going",
+      desiredOutcome: "Stay on the thread",
+      currentState: "in progress",
+      nextAction: "Continue",
+      blockers: [],
+      decisions: [],
+      evidenceRefs: [],
+      status: "DRAFT",
+      confidence: 0.9,
+      nextActionRequest: null
+    });
+    await service.resumeThread(stillActive.id);
+    expect((await service.resumeThread(stillActive.id)).status).toBe("ACTIVE");
   });
 });

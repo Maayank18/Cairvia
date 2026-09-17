@@ -150,6 +150,9 @@ export class ThreadService {
 
   async resumeThread(id: string): Promise<WorkThreadV1> {
     const current = await this.getThread(id);
+    if (current.status === "ACTIVE") {
+      return this.withCapsule(current);
+    }
     const ts = nowIso();
     const next = WorkThreadV1Schema.parse({
       ...current,
